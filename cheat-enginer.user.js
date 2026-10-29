@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Toolkit VioEdu Violympic by Từ Hưng 8A2 pro vip (v12.4 Full + Online Key Sync + Show Password)
+// @name        Toolkit VioEdu Violympic by Từ Hưng 8A2 pro vip 
 // @namespace   local.gemini.vio.redesigned.ultra
 // @version     12.4
 // @description Chụp bài đính kèm, Tích hợp Firebase Key Online, Tạo key thời hạn, Đồng bộ nhiều máy & Nút ẩn/hiện mật khẩu
