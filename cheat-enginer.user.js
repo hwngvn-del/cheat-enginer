@@ -1060,7 +1060,7 @@
     async function ask(prompt, useSearch = false, image = null) {
         if (!API_KEY) { addMessage("❌ Vui lòng nhập API Key trong phần tab '🔑 API Key'.", "error"); return; }
         addMessage(prompt, "user");
-        const loading = addMessage(useSearch ? "🔎 Đang tìm kiếm thông tin web..." : "✨ Trợ lý đang phân tích...");
+        const loading = addMessage(useSearch ? "🔎 Đang tìm kiếm thông tin web..." : "✨ đang phân tích...");
         $("gvh-status").textContent = "Đang xử lý...";
         try {
             const data = await requestGemini(prompt, useSearch, image);
