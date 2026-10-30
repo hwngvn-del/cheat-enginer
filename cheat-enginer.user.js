@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        Toolkit VioEdu Violympic by Từ Hưng 8A2 pro vip 
+// @name        Toolkit VioEdu Violympic by Từ Hưng 8A2 pro vip (v12.4 Full + Online Key Sync + Show Password)
 // @namespace   local.gemini.vio.redesigned.ultra
 // @version     12.4
 // @description Chụp bài đính kèm, Tích hợp Firebase Key Online, Tạo key thời hạn, Đồng bộ nhiều máy & Nút ẩn/hiện mật khẩu
@@ -23,8 +23,9 @@
     const FIREBASE_URL = "https://cheat-enginer-default-rtdb.asia-southeast1.firebasedatabase.app";
     const SCRIPT_PASSWORD = "thung8a2"; // Master Key Admin
 
-    let API_KEY = "";
-    let MODEL = "gemini-3.5-flash-lite";
+    // Tự động tải API Key và Model đã lưu từ localStorage
+    let API_KEY = localStorage.getItem("gvh_api_key") || "";
+    let MODEL = localStorage.getItem("gvh_model") || "gemini-3.5-flash-lite";
 
     // Cấu hình giao diện
     let savedAppearance = JSON.parse(localStorage.getItem("gvh_appearance_settings")) || {
@@ -49,7 +50,7 @@
     let TOGGLE_SHORTCUT = savedShortcut;
 
     let defaultNotes = [
-        { text: "⚡ CÁCH LẤY GEMINI API RIÊNG:\n\nBước 1: Lên Google gõ tìm kiếm 'Google AI Studio'\nBước 2: Đăng nhập tài khoản Google của bạn \nBước 3: Vào mục tạo API Key rồi dán vào phần API Key của Script là xong", time: "Hệ thống" }
+        { text: "⚡ CÁCH LẤY GEMINI API RIÊNG:\n\nBước 1: Vào https://aistudio.google.com/api-keys\nBước 2: Đăng nhập Google.\nBước 3: Nhấn Create API key.\nBước 4: Copy API Key và dán vào ứng dụng.", time: "Hệ thống" }
     ];
     let savedNotes = JSON.parse(localStorage.getItem("gvh_notes"));
     let NOTES = (savedNotes && savedNotes.length > 0) ? savedNotes : defaultNotes;
@@ -370,17 +371,14 @@
             <button class="gvh-tab-btn" data-tab="tab-notes">📝 Ghi Chú</button>
             <button class="gvh-tab-btn" data-tab="tab-apikey">🔑 API Key</button>
             <button class="gvh-tab-btn" data-tab="tab-appearance">🎨 Giao Diện</button>
-            <button class="gvh-tab-btn" data-tab="tab-settings">⚙ Hệ Thống</button>
+            <button class="gvh-tab-btn" data-tab="tab-settings">⚙ Setting</button>
         </div>
 
         <div id="tab-chat" class="gvh-tab-content active">
             <div id="gvh-messages">
                 <div class="gvh-msg gvh-ai">
 ⚡ THÔNG TIN CẬP NHẬT PHIÊN BẢN MỚI (v12.4) ⚡<br><br>
-🔥 Cải tiến:<br>
-• Nút <b>📸 Chụp bài</b> đính kèm ảnh chụp bài vào khung xem trước.<br>
-• Tích hợp hệ thống Key Online Firebase đồng bộ trên mọi thiết bị.<br>
-• Thêm nút 👁️ ẩn/hiện mật khẩu ở ô đăng nhập.
+• fix all 100% lỗi
                 </div>
             </div>
             <div id="gvh-input-area">
@@ -530,7 +528,8 @@
     const $ = id => document.getElementById(id);
 
     $("gvh-theme-select").value = CURRENT_THEME;
-    $("gvh-model").value = MODEL;
+    $("gvh-key").value = API_KEY; // Hiển thị lại API key vào ô nhập khi mở giao diện
+    $("gvh-model").value = MODEL; // Hiển thị lại Model đã lưu
     $("gvh-effect-select").value = CURRENT_EFFECT;
     $("gvh-fontsize-select").value = FONT_SIZE;
     $("gvh-radius-select").value = BORDER_RADIUS;
@@ -919,12 +918,34 @@
 
     function formatMessageText(text) {
         let clean = escapeHtml(text);
+
+        // 1. Chuyển đổi mã LaTeX sang ký hiệu toán học Unicode dễ đọc
         clean = clean.replace(/\\mathbf\{([^}]+)\}/g, '$1');
         clean = clean.replace(/\\widehat\{([^}]+)\}/g, 'góc $1');
         clean = clean.replace(/\\angle/g, 'góc');
-        clean = clean.replace(/\$\$([\s\S]*?)\$\$/g, '<div style="background:rgba(15,23,42,0.7); padding:10px; margin:8px 0; border-radius:10px; font-family:monospace; color:#38bdf8; border:1px solid rgba(255,255,255,0.08);">$1</div>');
-        clean = clean.replace(/\$([^\$\n]+?)\$/g, '<span style="font-family:monospace; background:rgba(15,23,42,0.7); padding:3px 6px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);">$1</span>');
+        // Căn thức: \sqrt{10} -> √10 hoặc √(x)
+        clean = clean.replace(/\\sqrt\{([^}]+)\}/g, (match, p1) => {
+            return p1.length === 1 || !isNaN(p1) ? `√${p1}` : `√(${p1})`;
+        });
+
+        // Phân số: \frac{a}{b} -> (a/b)
+        clean = clean.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
+
+        // Ký hiệu phép toán & so sánh
+        clean = clean.replace(/\\times/g, '×');
+        clean = clean.replace(/\\cdot/g, '·');
+        clean = clean.replace(/\\div/g, '÷');
+        clean = clean.replace(/\\le(q)?/g, '≤');
+        clean = clean.replace(/\\ge(q)?/g, '≥');
+        clean = clean.replace(/\\ne(q)?/g, '≠');
+        clean = clean.replace(/\\pm/g, '±');
+        clean = clean.replace(/\\degree/g, '°');
+
+        // 2. Định dạng khung chứa công thức $$...$$ và $...$
+        clean = clean.replace(/\$\$([\s\S]*?)\$\$/g, '<div style="background:rgba(15,23,42,0.7); padding:10px; margin:8px 0; border-radius:10px; font-family:system-ui, sans-serif; font-weight:600; color:#38bdf8; border:1px solid rgba(255,255,255,0.08);">$1</div>');
+        clean = clean.replace(/\$([^\$\n]+?)\$/g, '<span style="font-family:system-ui, sans-serif; font-weight:600; background:rgba(15,23,42,0.7); padding:3px 8px; border-radius:6px; color:#38bdf8; border:1px solid rgba(255,255,255,0.08);">$1</span>');
         clean = clean.replace(/\*\*(.*?)\*\*/g, '<b style="color: #fff; font-weight: 700;">$1</b>');
+
         return clean;
     }
 
@@ -940,9 +961,18 @@
 
     function requestGemini(prompt, useSearch, image = null) {
         return new Promise((resolve, reject) => {
-            const systemInstruction = "Bạn là một trợ lý thông minh chuyên giải toán VioEdu và Violympic. QUY TẮC BẮT BUỘC: KHÔNG BAO GIỜ sử dụng các lệnh LaTeX phức tạp như \\mathbf, \\widehat hay \\left/\\right trong câu trả lời. Đối với hình học, hãy viết dạng văn bản đơn giản (ví dụ: góc C2, góc A, góc B). Trình bày ngắn gọn, rõ ràng, luôn in đậm kết quả cuối cùng để học sinh điền ngay.";
+            const systemInstruction = `Bạn là một trợ lý thông minh chuyên giải toán VioEdu và Violympic.
 
-            let parts = [
+HÃY TUÂN THỦ TẬP QUY TẮC ĐỊNH DẠNG SAU:
+1. Trả về kết quả trực tiếp, ngắn gọn, đi thẳng vào đáp án.
+2. KHÔNG sử dụng định dạng Markdown (như ###, **, hoặc các dấu ngoặc vuông/ngoặc nhọn bao quanh chữ).
+3. KHÔNG sử dụng mã LaTeX thô (như \\sqrt, \\iff, \\begin{cases}, \\ge, \\le).
+4. CHỈ dùng chữ viết thường và các ký tự toán học Unicode thông thường: √, ≥, ≤, ⇔, ⇒, /, ^.
+
+Định dạng đầu ra mẫu:
+Đáp án đúng: A. 1 ≤ x < 5/2`;
+
+             let parts = [
                 { text: "Hệ thống chỉ dẫn: " + systemInstruction },
                 { text: prompt }
             ];
@@ -1158,6 +1188,7 @@
         addMessage(`✨ Đã lưu & cập nhật giao diện:\n- Màu: ${CURRENT_THEME}\n- Cỡ chữ: ${FONT_SIZE}px\n- Độ mờ: ${Math.round(BG_OPACITY * 100)}%\n- Kích thước Panel: ${Math.round(PANEL_SCALE * 100)}%\n- Hiệu ứng: ${CURRENT_EFFECT}`);
     };
 
+    // LƯU API KEY VÀ MODEL VÀO LOCALSTORAGE
     $("gvh-save-api").onclick = async () => {
         const key = $("gvh-key").value.trim();
         if (key) API_KEY = key;
@@ -1173,6 +1204,11 @@
 
         try {
             await testAPI();
+
+            // Lưu cố định vào bộ nhớ trình duyệt
+            localStorage.setItem("gvh_api_key", API_KEY);
+            localStorage.setItem("gvh_model", MODEL);
+
             statusEl.style.color = "#34d399";
             statusEl.textContent = `✓ Kết nối API thành công!`;
             addMessage(`✓ Đã lưu cấu hình API!\n- Model: ${MODEL}`);
@@ -1202,7 +1238,7 @@
         $("gvh-question").value = "";
         const image = pastedImage;
         clearPastedImage();
-        ask(text ? text : "Hãy đọc kỹ hình ảnh bài tập này, giải chi tiết từng bước và in đậm kết quả cuối cùng.", false, image);
+        ask(text ? text : "Hãy giải bài.", false, image);
     };
 
     $("gvh-capture").onclick = () => {
